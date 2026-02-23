@@ -24,8 +24,8 @@ data class UpdateUsuarioRequest(
     val codigoPostal: String,
 
     /**
-     * Representa la nueva contraseñ adel usuario.
-     * Puede ser null si el usuario solo quiere modificar el correo o el código postal.
+     * Nueva contraseña del usuario. Nullable, por si no desea cambiarla.
+     * En un sistema real se almacenaría cifrada.
      */
     val password: String?
 )
