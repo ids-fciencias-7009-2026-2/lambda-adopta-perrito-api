@@ -8,11 +8,11 @@
         <version>4.0.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.dunder.mifflin.paper</groupId>
-    <artifactId>dunderSys</artifactId>
+    <groupId>com.lambdaTeam.sys</groupId>
+    <artifactId>adoptaPerrito</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>dunderSys</name>
-    <description>Proyecto para disminuir el uso de papel dentro de la empresa</description>
+    <name>adoptaPerrito</name>
+    <description>Demo project for Spring Boot</description>
     <url/>
     <licenses>
         <license/>
