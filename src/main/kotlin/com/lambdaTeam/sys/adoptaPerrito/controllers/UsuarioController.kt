@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.security.MessageDigest
 import java.time.LocalDateTime
 
 /**
@@ -85,6 +86,12 @@ class UsuarioController {
 
         // Conversión de DTO a objeto de dominio usando extension function
         val usuarioNuevo = createUsuarioRequest.toUsuario()
+
+        // hasheo de la contraseña por motivos de seguridad
+        val passwordHasheada = hashPassword(createUsuarioRequest.password)
+        usuarioNuevo.password = passwordHasheada
+
+        usuarioService.addNuevoUsuario(usuarioNuevo)
 
         logger.info("Registrando nuevo usuario: $usuarioNuevo")
 
@@ -212,6 +219,13 @@ class UsuarioController {
 
         // Retornamos el usuario sin el password
         return ResponseEntity.ok(usuarioFake.copy(password = null))
+    }
+
+    fun hashPassword(password: String): String {
+        val bytes = MessageDigest
+            .getInstance("SHA-256")
+            .digest(password.toByteArray())
+        return bytes.joinToString("") {"%02x".format(it)}
     }
 
     @GetMapping("/all")
