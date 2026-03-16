@@ -1,6 +1,7 @@
 package com.lambdaTeam.sys.adoptaPerrito.domain
 
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.CreateUsuarioRequest
+import com.lambdaTeam.sys.adoptaPerrito.entities.UsuarioEntity
 import java.util.UUID
 
 /**
@@ -27,3 +28,8 @@ fun CreateUsuarioRequest.toUsuario(): Usuario {
         // La contraseña no se asigna aquí; en un sistema real se cifraría antes de guardar
     )
 }
+
+fun UsuarioEntity.toUsuario(): Usuario {
+    return Usuario(id = this.id_usuario.toString(), nombre = this.nombre, email = this.correo, codigoPostal = this.codigo_postal, password = this.contrasena)
+}
+
