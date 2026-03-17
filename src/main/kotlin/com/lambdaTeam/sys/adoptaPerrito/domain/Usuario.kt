@@ -20,7 +20,7 @@ data class Usuario(
      * Identificador único del usuario.
      * En un sistema real lo generaría la base de datos.
      */
-    val id: String,
+    val id: Int? = null,
 
     /**
      * Nombre completo del usuario.

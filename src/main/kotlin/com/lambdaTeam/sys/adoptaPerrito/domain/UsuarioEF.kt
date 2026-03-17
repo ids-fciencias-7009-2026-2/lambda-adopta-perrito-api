@@ -21,7 +21,7 @@ fun CreateUsuarioRequest.toUsuario(): Usuario {
     val id = "usr-" + UUID.randomUUID().toString()
 
     return Usuario(
-        id = id,
+        //id = null,
         nombre = this.nombre,
         email = this.email,
         codigoPostal = this.codigoPostal
@@ -30,6 +30,6 @@ fun CreateUsuarioRequest.toUsuario(): Usuario {
 }
 
 fun UsuarioEntity.toUsuario(): Usuario {
-    return Usuario(id = this.id_usuario.toString(), nombre = this.nombre, email = this.correo, codigoPostal = this.codigo_postal, password = this.contrasena)
+    return Usuario(id = this.id_usuario, nombre = this.nombre, email = this.correo, codigoPostal = this.codigo_postal, password = this.contrasena)
 }
 

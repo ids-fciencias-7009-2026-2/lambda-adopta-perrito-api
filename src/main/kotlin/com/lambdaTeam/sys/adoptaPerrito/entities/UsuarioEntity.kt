@@ -12,7 +12,7 @@ import jakarta.persistence.Id
 data class UsuarioEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id_usuario: String,
+    val id_usuario: Int? = null,
     var nombre: String,
     var correo: String,
     var codigo_postal: String,

@@ -51,7 +51,7 @@ class UsuarioController {
 
         // Usuario simulado — en un sistema real se obtendría de la sesión/token
         val usuarioFake = Usuario(
-            id = "usr-001",
+            id = 1234,
             nombre = "Ana García",
             email = "ana.garcia@email.com",
             codigoPostal = "06600"
@@ -124,7 +124,7 @@ class UsuarioController {
 
         // Usuario simulado que representa el registro en el sistema
         val usuarioFake = Usuario(
-            id = "usr-001",
+            id = 1234,
             nombre = "Ana García",
             email = "ana@email.com",
             codigoPostal = "06600",
@@ -157,14 +157,14 @@ class UsuarioController {
 
         // En un sistema real, aquí se invalidaría el token de sesión
         val usuarioFake = Usuario(
-            id = "usr-001",
+            id = 1234,
             nombre = "Ana García",
             email = "ana@email.com",
             codigoPostal = "06600"
         )
 
         val logoutResponse = LogoutResponse(
-            userId = usuarioFake.id,
+            userId = usuarioFake.id.toString(),
             mensaje = "Sesión cerrada exitosamente",
             logoutDateTime = LocalDateTime.now().toString()
         )
@@ -199,7 +199,7 @@ class UsuarioController {
 
         // Simulación del usuario encontrado en el sistema
         val usuarioFake = Usuario(
-            id = "usr-001",
+            id = 1234,
             nombre = "Ana García",
             email = "ana@email.com",
             codigoPostal = "06600"
