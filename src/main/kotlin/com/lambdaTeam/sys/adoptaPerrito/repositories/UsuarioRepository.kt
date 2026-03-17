@@ -10,4 +10,4 @@ interface UsuarioRepository : CrudRepository<UsuarioEntity, Int> {
 
     @Query("select u from UsuarioEntity u where u.correo = :correo and u.contrasena = :contrasena")
     fun findUserByPasswordAndEmail(correo: String, contrasena: String): UsuarioEntity?
-    }
+}
