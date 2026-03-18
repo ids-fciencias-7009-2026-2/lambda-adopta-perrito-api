@@ -233,4 +233,62 @@ class UsuarioController {
         val allUserFound = usuarioService.buscaUsuarios()
         return ResponseEntity.ok( allUserFound)
     }
+
+    /**
+     * Endpoint que obtiene un usuario específico a partir de su identificador.
+     *
+     * URL:    GET http://localhost:8080/usuarios/{id}
+     * Método: GET
+     *
+     * Ejemplo:
+     * GET /usuarios/1
+     *
+     * En este caso, el valor "1" será asignado automáticamente
+     * al parámetro 'id' mediante @PathVariable.
+     *
+     * @param id Identificador entero del usuario recibido desde la URL.
+     * @return ResponseEntity con el usuario encontrado y código HTTP 200 (OK),
+     *         o HTTP 404 si no existe un usuario con ese id.
+     */
+    @GetMapping("/{id}")
+    fun getUsuarioById(
+        @PathVariable id: Int
+    ): ResponseEntity<Any> {
+        val usuario = usuarioService.buscaPorId(id)
+        return if (usuario != null) {
+            ResponseEntity.ok(usuario.copy(password = null))
+        } else {
+            ResponseEntity.status(404).body("Usuario con id $id no encontrado")
+        }
+    }
+
+    /**
+     * Endpoint que permite buscar usuarios usando filtros como query parameters.
+     *
+     * URL:    GET http://localhost:8080/usuarios/buscar
+     * Ejemplo: GET /usuarios/buscar?email=ana@email.com&cp=06600&nombre=Ana
+     *
+     * @param email  Correo electrónico como filtro de búsqueda.
+     * @param cp     Código postal como filtro de búsqueda.
+     * @param nombre Nombre como filtro de búsqueda.
+     * @return ResponseEntity con los usuarios que coincidan con los filtros.
+     */
+    @GetMapping("/buscar")
+    fun buscarUsuario(
+        @RequestParam email: String,
+        @RequestParam cp: String,
+        @RequestParam nombre: String
+    ): ResponseEntity<Any> {
+        val todosLosUsuarios = usuarioService.buscaUsuarios()
+        val resultado = todosLosUsuarios.filter { usuario ->
+            usuario.email == email ||
+                    usuario.codigoPostal == cp ||
+                    usuario.nombre == nombre
+        }
+        return if (resultado.isNotEmpty()) {
+            ResponseEntity.ok(resultado.map { it.copy(password = null) })
+        } else {
+            ResponseEntity.status(404).body("No se encontraron usuarios con esos filtros")
+        }
+    }
 }

@@ -29,4 +29,9 @@ class UsuarioService {
         usuario.password = "****"
         return usuario
     }
+
+    fun buscaPorId(id: Int): Usuario? {
+        val entity = usuarioRepository.findById(id).orElse(null)
+        return entity?.toUsuario()
+    }
 }
