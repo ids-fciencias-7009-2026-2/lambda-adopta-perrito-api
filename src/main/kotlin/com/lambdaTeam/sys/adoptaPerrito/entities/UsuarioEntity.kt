@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.Id
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuario")
 
 data class UsuarioEntity(
     @Id
