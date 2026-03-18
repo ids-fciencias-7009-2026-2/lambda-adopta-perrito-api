@@ -4,7 +4,6 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Usuario
 import com.lambdaTeam.sys.adoptaPerrito.domain.toUsuario
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.CreateUsuarioRequest
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.LoginRequest
-import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateUsuarioRequest
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.LogoutResponse
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import org.slf4j.Logger
@@ -15,20 +14,6 @@ import org.springframework.web.bind.annotation.*
 import java.security.MessageDigest
 import java.time.LocalDateTime
 
-/**
- * Controlador encargado de exponer los endpoints REST relacionados
- * con la gestión de usuarios de la plataforma de adopción de perros y gatos.
- *
- * En esta versión inicial (Práctica 1) se utilizan datos simulados ("fake")
- * sin conexión real a base de datos ni seguridad real.
- *
- * Endpoints implementados:
- *  - GET  /usuarios/me        → Obtiene el usuario autenticado
- *  - POST /usuarios/register  → Registra un nuevo usuario
- *  - POST /usuarios/login     → Auténtica a un usuario
- *  - POST /usuarios/logout    → Cierra la sesión del usuario
- *  - PUT  /usuarios           → Actualiza la información del usuario
- */
 @RestController
 @RequestMapping("/usuarios")
 class UsuarioController {
@@ -38,189 +23,90 @@ class UsuarioController {
 
     val logger: Logger = LoggerFactory.getLogger(UsuarioController::class.java)
 
-    /**
-     * Endpoint que devuelve la información del usuario autenticado.
-     *
-     * URL:    GET http://localhost:8080/usuarios/me
-     * Método: GET
-     *
-     * @return ResponseEntity con un objeto Usuario y código HTTP 200 (OK).
-     */
     @GetMapping("/me")
-    fun retrieveUsuario(): ResponseEntity<Usuario> {
+    fun retrieveUsuario(@RequestHeader("Authorization", required = false) authHeader: String?): ResponseEntity<Any> {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(mapOf("error" to "Token no proporcionado o formato inválido"))
+        }
 
-        // Usuario simulado — en un sistema real se obtendría de la sesión/token
-        val usuarioFake = Usuario(
-            id = 1234,
-            nombre = "Ana García",
-            email = "ana.garcia@email.com",
-            codigoPostal = "06600"
-        )
+        val token = authHeader.substring(7) // Quitamos "Bearer "
+        val usuario = usuarioService.obtenerUsuarioPorToken(token)
 
-        logger.info("Usuario recuperado: $usuarioFake")
-
-        return ResponseEntity.ok(usuarioFake)
+        return if (usuario != null) {
+            logger.info("Usuario recuperado desde BD: ${usuario.email}")
+            // Devolvemos el usuario sin la contraseña por seguridad
+            ResponseEntity.ok(usuario.copy(password = null))
+        } else {
+            ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
+        }
     }
 
-    /**
-     * Endpoint para registrar un nuevo usuario en la plataforma.
-     *
-     * URL:    POST http://localhost:8080/usuarios/register
-     * Método: POST
-     *
-     * Body esperado (JSON):
-     * {
-     *   "nombre": "Ana García",
-     *   "email": "ana@email.com",
-     *   "codigoPostal": "06600",
-     *   "password": "MiPassword123"
-     * }
-     *
-     * @param createUsuarioRequest DTO con los datos del nuevo usuario.
-     * @return ResponseEntity con el usuario creado y código HTTP 200 (OK).
-     */
     @PostMapping("/register")
     fun registrarUsuario(
         @RequestBody createUsuarioRequest: CreateUsuarioRequest
     ): ResponseEntity<Usuario> {
 
-        // Conversión de DTO a objeto de dominio usando extension function
         val usuarioNuevo = createUsuarioRequest.toUsuario()
 
-        // hasheo de la contraseña por motivos de seguridad
+        // Hasheamos la contraseña antes de guardarla
         val passwordHasheada = hashPassword(createUsuarioRequest.password)
         usuarioNuevo.password = passwordHasheada
 
-        usuarioService.addNuevoUsuario(usuarioNuevo)
+        val usuarioGuardado = usuarioService.addNuevoUsuario(usuarioNuevo)
 
-        logger.info("Registrando nuevo usuario: $usuarioNuevo")
-
-        // En esta etapa no se guarda en BD, solo se simula el registro
-        return ResponseEntity.ok(usuarioNuevo)
+        logger.info("Registrando nuevo usuario en BD: ${usuarioGuardado.email}")
+        return ResponseEntity.ok(usuarioGuardado.copy(password = null))
     }
 
-    /**
-     * Endpoint que simula la autenticación de un usuario.
-     *
-     * Compara las credenciales recibidas contra un usuario ficticio.
-     *
-     * URL:    POST http://localhost:8080/usuarios/login
-     * Método: POST
-     *
-     * Body esperado (JSON):
-     * {
-     *   "email": "ana@email.com",
-     *   "password": "MiPassword123"
-     * }
-     *
-     * @param loginRequest DTO con las credenciales del usuario.
-     * @return HTTP 200 si las credenciales son correctas,
-     *         HTTP 401 si son incorrectas.
-     */
     @PostMapping("/login")
     fun login(
         @RequestBody loginRequest: LoginRequest
     ): ResponseEntity<Any> {
+        logger.info("Intento de login real con email: ${loginRequest.email}")
 
-        // Usuario simulado que representa el registro en el sistema
-        val usuarioFake = Usuario(
-            id = 1234,
-            nombre = "Ana García",
-            email = "ana@email.com",
-            codigoPostal = "06600",
-            password = "MiPassword123"
-        )
+        val passwordHasheada = hashPassword(loginRequest.password)
 
-        logger.info("Intento de login con email: ${loginRequest.email}")
+        // El service devuelve directamente el token como String (o null si falla)
+        val tokenGenerado = usuarioService.login(loginRequest.email, passwordHasheada)
 
-        return if (usuarioFake.email == loginRequest.email && usuarioFake.password == loginRequest.password) {
-            logger.info("Login exitoso para: ${loginRequest.email}")
-            // HTTP 200 → autenticación exitosa
-            ResponseEntity.ok(usuarioFake.copy(password = null)) // No retornamos el password
+        return if (tokenGenerado != null) {
+            ResponseEntity.ok(mapOf(
+                "mensaje" to "Login exitoso",
+                "token" to tokenGenerado // Usamos directamente el string devuelto
+            ))
         } else {
             logger.error("Login fallido para: ${loginRequest.email}")
-            // HTTP 401 → Unauthorized (credenciales inválidas)
-            ResponseEntity.status(401).build()
+            ResponseEntity.status(401).body(mapOf("error" to "Credenciales inválidas"))
         }
     }
 
-    /**
-     * Endpoint que simula el cierre de sesión del usuario.
-     *
-     * URL:    POST http://localhost:8080/usuarios/logout
-     * Método: POST
-     *
-     * @return ResponseEntity con información del logout y código HTTP 200 (OK).
-     */
     @PostMapping("/logout")
-    fun logout(): ResponseEntity<LogoutResponse> {
-
-        // En un sistema real, aquí se invalidaría el token de sesión
-        val usuarioFake = Usuario(
-            id = 1234,
-            nombre = "Ana García",
-            email = "ana@email.com",
-            codigoPostal = "06600"
-        )
-
-        val logoutResponse = LogoutResponse(
-            userId = usuarioFake.id.toString(),
-            mensaje = "Sesión cerrada exitosamente",
-            logoutDateTime = LocalDateTime.now().toString()
-        )
-
-        logger.info("Logout realizado para usuario: ${usuarioFake.id} a las ${logoutResponse.logoutDateTime}")
-
-        return ResponseEntity.ok(logoutResponse)
-    }
-
-    /**
-     * Endpoint que actualiza la información del usuario autenticado.
-     *
-     * Permite modificar email, código postal y contraseña.
-     *
-     * URL:    PUT http://localhost:8080/usuarios
-     * Método: PUT
-     *
-     * Body esperado (JSON):
-     * {
-     *   "email": "nuevo-email@email.com",
-     *   "codigoPostal": "11000",
-     *   "password": "NuevoPassword123"
-     * }
-     *
-     * @param updateUsuarioRequest DTO con los nuevos datos.
-     * @return ResponseEntity con el usuario actualizado y código HTTP 200 (OK).
-     */
-    @PutMapping
-    fun actualizarUsuario(
-        @RequestBody updateUsuarioRequest: UpdateUsuarioRequest
-    ): ResponseEntity<Usuario> {
-
-        // Simulación del usuario encontrado en el sistema
-        val usuarioFake = Usuario(
-            id = 1234,
-            nombre = "Ana García",
-            email = "ana@email.com",
-            codigoPostal = "06600"
-        )
-
-        logger.info("Usuario encontrado para actualizar: $usuarioFake")
-        logger.info("Datos de actualización recibidos: $updateUsuarioRequest")
-
-        // Simulación de la actualización de datos
-        usuarioFake.email = updateUsuarioRequest.email
-        usuarioFake.codigoPostal = updateUsuarioRequest.codigoPostal
-        if (updateUsuarioRequest.password != null) {
-            usuarioFake.password = updateUsuarioRequest.password
+    fun logout(@RequestHeader("Authorization", required = false) authHeader: String?): ResponseEntity<Any> {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(mapOf("error" to "Token no proporcionado"))
         }
 
-        logger.info("Usuario actualizado: $usuarioFake")
+        val token = authHeader.substring(7)
 
-        // Retornamos el usuario sin el password
-        return ResponseEntity.ok(usuarioFake.copy(password = null))
+        // Primero buscamos al usuario para saber quién está cerrando sesión
+        val usuario = usuarioService.obtenerUsuarioPorToken(token)
+
+        return if (usuario != null) {
+            // Si el usuario existe, borramos su token de la base de datos
+            usuarioService.logout(token)
+
+            val logoutResponse = LogoutResponse(
+                userId = usuario.id.toString(), // ID real de la base de datos
+                mensaje = "Sesión cerrada exitosamente en la BD",
+                logoutDateTime = LocalDateTime.now().toString()
+            )
+            ResponseEntity.ok(logoutResponse)
+        } else {
+            ResponseEntity.status(401).body(mapOf("error" to "No se pudo cerrar sesión. Token inválido."))
+        }
     }
 
+    // Función de ayuda para encriptar contraseñas
     fun hashPassword(password: String): String {
         val bytes = MessageDigest
             .getInstance("SHA-256")
@@ -231,25 +117,10 @@ class UsuarioController {
     @GetMapping("/all")
     fun retrieveAllUsuarios(): ResponseEntity<Any> {
         val allUserFound = usuarioService.buscaUsuarios()
-        return ResponseEntity.ok( allUserFound)
+        // Nos aseguramos de no devolver contraseñas en la lista
+        return ResponseEntity.ok(allUserFound.map { it.copy(password = null) })
     }
 
-    /**
-     * Endpoint que obtiene un usuario específico a partir de su identificador.
-     *
-     * URL:    GET http://localhost:8080/usuarios/{id}
-     * Método: GET
-     *
-     * Ejemplo:
-     * GET /usuarios/1
-     *
-     * En este caso, el valor "1" será asignado automáticamente
-     * al parámetro 'id' mediante @PathVariable.
-     *
-     * @param id Identificador entero del usuario recibido desde la URL.
-     * @return ResponseEntity con el usuario encontrado y código HTTP 200 (OK),
-     *         o HTTP 404 si no existe un usuario con ese id.
-     */
     @GetMapping("/{id}")
     fun getUsuarioById(
         @PathVariable id: Int
@@ -262,17 +133,6 @@ class UsuarioController {
         }
     }
 
-    /**
-     * Endpoint que permite buscar usuarios usando filtros como query parameters.
-     *
-     * URL:    GET http://localhost:8080/usuarios/buscar
-     * Ejemplo: GET /usuarios/buscar?email=ana@email.com&cp=06600&nombre=Ana
-     *
-     * @param email  Correo electrónico como filtro de búsqueda.
-     * @param cp     Código postal como filtro de búsqueda.
-     * @param nombre Nombre como filtro de búsqueda.
-     * @return ResponseEntity con los usuarios que coincidan con los filtros.
-     */
     @GetMapping("/buscar")
     fun buscarUsuario(
         @RequestParam email: String,
