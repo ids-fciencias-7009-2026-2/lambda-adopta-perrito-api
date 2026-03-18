@@ -44,5 +44,7 @@ data class Usuario(
      * Es nullable porque no se expone en las respuestas HTTP.
      * En un sistema real se almacenaría cifrada (nunca en texto plano).
      */
-    var password: String? = null
+    var password: String? = null,
+
+    var token: String? = null
 )
