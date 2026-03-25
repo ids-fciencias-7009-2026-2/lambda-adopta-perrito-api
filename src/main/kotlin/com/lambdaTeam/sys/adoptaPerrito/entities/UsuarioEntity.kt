@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Table
 import jakarta.persistence.Id
+import jakarta.persistence.Column
 
 @Entity
 @Table(name = "usuario")
@@ -14,6 +15,7 @@ data class UsuarioEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id_usuario: Int? = null,
     var nombre: String,
+    @Column(unique = true, nullable = false)
     var correo: String,
     var codigo_postal: String,
     var contrasena: String,

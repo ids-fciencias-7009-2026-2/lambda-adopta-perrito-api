@@ -44,18 +44,25 @@ class UsuarioController {
     @PostMapping("/register")
     fun registrarUsuario(
         @RequestBody createUsuarioRequest: CreateUsuarioRequest
-    ): ResponseEntity<Usuario> {
+    ): ResponseEntity<Any> { // Cambiamos a <Any> para devolver el Usuario o un Mensaje de Error
+        return try {
+            val usuarioNuevo = createUsuarioRequest.toUsuario()
+            val passwordHasheada = hashPassword(createUsuarioRequest.password)
+            usuarioNuevo.password = passwordHasheada
+            val usuarioGuardado = usuarioService.addNuevoUsuario(usuarioNuevo)
 
-        val usuarioNuevo = createUsuarioRequest.toUsuario()
+            logger.info("Registrando nuevo usuario en BD: ${usuarioGuardado.email}")
+            ResponseEntity.ok(usuarioGuardado.copy(password = null))
 
-        // Hasheamos la contraseña antes de guardarla
-        val passwordHasheada = hashPassword(createUsuarioRequest.password)
-        usuarioNuevo.password = passwordHasheada
+        } catch (e: Exception) {
+            logger.error("Error al registrar usuario: ${e.message}")
 
-        val usuarioGuardado = usuarioService.addNuevoUsuario(usuarioNuevo)
-
-        logger.info("Registrando nuevo usuario en BD: ${usuarioGuardado.email}")
-        return ResponseEntity.ok(usuarioGuardado.copy(password = null))
+            if (e.message?.contains("ya está registrado") == true || e.message?.contains("duplicate key") == true) {
+                ResponseEntity.status(400).body(mapOf("error" to "El correo electrónico ya se encuentra en uso."))
+            } else {
+                ResponseEntity.status(500).body(mapOf("error" to "Ocurrió un error inesperado en el servidor."))
+            }
+        }
     }
 
     @PostMapping("/login")
