@@ -21,4 +21,7 @@ interface UsuarioRepository : CrudRepository<UsuarioEntity, Int> {
     @Transactional
     @Query("update UsuarioEntity u set u.token = :token where u.id_usuario = :id")
     fun updateTokenById(id: Int, token: String?)
+
+
+    fun findByCorreo(correo: String): UsuarioEntity?
 }

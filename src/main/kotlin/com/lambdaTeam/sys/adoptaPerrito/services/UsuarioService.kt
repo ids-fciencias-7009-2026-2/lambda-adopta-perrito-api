@@ -17,8 +17,12 @@ class UsuarioService {
     @Autowired
     lateinit var usuarioRepository: UsuarioRepository
 
-
     fun addNuevoUsuario(usuario: Usuario): Usuario {
+        val todos = usuarioRepository.findAll()
+        if (todos.any { it.correo == usuario.email }) {
+            throw Exception("El correo ${usuario.email} ya está registrado")
+        }
+
         val usuarioEntity = usuario.toUsuarioEntity()
         val guardado = usuarioRepository.save(usuarioEntity)
 
