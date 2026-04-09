@@ -1,32 +1,47 @@
 package com.lambdaTeam.sys.adoptaPerrito.dto.request
 
 /**
- * DTO utilizado para actualizar la información de un usuario registrado.
+ * DTO utilizado para actualizar la información de un usuario autenticado.
  *
  * Representa el body de una petición PUT /usuarios
  *
+ * A diferencia del registro, todos los campos son opcionales (nullable),
+ * ya que el usuario puede decidir actualizar solo ciertos datos.
+ *
  * Ejemplo de JSON:
  * {
+ *   "nombre": "Juan Pérez",
  *   "email": "nuevo-email@email.com",
  *   "codigoPostal": "11000",
  *   "password": "NuevoPassword123"
  * }
  */
 data class UpdateUsuarioRequest(
-    /** Nuevo correo electrónico que el usuario desea registrar
-     *
-     */
-    val email: String,
-
-    /** Indica el nuevo código postal asociado a la dirección del usuario.
-     * Se maneja como string para mantener los 0 a la izquierda
-     */
-    val codigoPostal: String,
 
     /**
-     * Nueva contraseña del usuario. Nullable, por si no desea cambiarla.
-     * En un sistema real se almacenaría cifrada.
+     * Nuevo nombre del usuario.
+     * Nullable: si no se envía, no se modifica.
+     */
+    val nombre: String?,
+
+    /**
+     * Nuevo correo electrónico que el usuario desea registrar.
+     * Nullable: si no se envía, se mantiene el actual.
+     */
+    val email: String?,
+
+    /**
+     * Nuevo código postal asociado a la dirección del usuario.
+     * Se maneja como String para preservar ceros a la izquierda.
+     * Nullable: si no se envía, no se modifica.
+     */
+    val codigoPostal: String?,
+
+    /**
+     * Nueva contraseña del usuario.
+     * Nullable: permite no cambiar la contraseña si no se desea.
+     *
+     * Nota: La contraseña debe ser encriptada antes de almacenarse.
      */
     val password: String?
 )
-
