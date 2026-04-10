@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*
 import java.security.MessageDigest
 import java.time.LocalDateTime
 
+@CrossOrigin(origins = ["http://localhost:5173"])
 @RestController
 @RequestMapping("/usuarios")
 class UsuarioController {
