@@ -4,10 +4,12 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Usuario
 import com.lambdaTeam.sys.adoptaPerrito.domain.toUsuario
 import com.lambdaTeam.sys.adoptaPerrito.entities.toUsuarioEntity
 import com.lambdaTeam.sys.adoptaPerrito.repositories.UsuarioRepository
+import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateUsuarioRequest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.security.MessageDigest
 import java.util.UUID
 
 @Service
@@ -47,6 +49,8 @@ class UsuarioService {
         }
     }
 
+
+
     fun obtenerUsuarioPorToken(token: String): Usuario? {
         val entity = usuarioRepository.findByToken(token)
         return entity?.toUsuario()?.apply {
@@ -64,6 +68,48 @@ class UsuarioService {
             true
         } else {
             false
+        }
+    }
+
+    // Función de ayuda para encriptar contraseñas
+    fun hashPassword(password: String): String {
+        val bytes = MessageDigest
+            .getInstance("SHA-256")
+            .digest(password.toByteArray())
+        return bytes.joinToString("") {"%02x".format(it)}
+    }
+
+    fun actualizarUsuario(id: Int, request: UpdateUsuarioRequest): Usuario {
+
+        val entity = usuarioRepository.findById(id)
+            .orElseThrow { RuntimeException("Usuario no encontrado con id $id") }
+
+        // Validar email duplicado si se intenta cambiar
+        request.email?.let { nuevoEmail ->
+            val todos = usuarioRepository.findAll()
+
+            if (todos.any { it.correo == nuevoEmail && it.id_usuario != id }) {
+                throw Exception("El correo $nuevoEmail ya está registrado")
+            }
+
+            entity.correo = nuevoEmail
+        }
+
+        // Actualización parcial
+        request.nombre?.let { entity.nombre = it }
+        request.codigoPostal?.let { entity.codigo_postal = it }
+
+        // Si viene password → hashear
+        request.password?.let {
+            entity.contrasena = hashPassword(it)
+        }
+
+        val actualizado = usuarioRepository.save(entity)
+
+        logger.info("Usuario actualizado correctamente con ID: $id")
+
+        return actualizado.toUsuario().apply {
+            password = null
         }
     }
 

@@ -4,6 +4,7 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Usuario
 import com.lambdaTeam.sys.adoptaPerrito.domain.toUsuario
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.CreateUsuarioRequest
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.LoginRequest
+import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateUsuarioRequest
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.LogoutResponse
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import org.slf4j.Logger
@@ -84,6 +85,32 @@ class UsuarioController {
         } else {
             logger.error("Login fallido para: ${loginRequest.email}")
             ResponseEntity.status(401).body(mapOf("error" to "Credenciales inválidas"))
+        }
+    }
+
+    @PutMapping
+    fun actualizarUsuario(
+        @RequestHeader("Authorization", required = false) authHeader: String?,
+        @RequestBody request: UpdateUsuarioRequest
+    ): ResponseEntity<Any> {
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(mapOf("error" to "Token no proporcionado o inválido"))
+        }
+
+        val token = authHeader.substring(7)
+        val usuario = usuarioService.obtenerUsuarioPorToken(token)
+
+        return if (usuario != null) {
+            try {
+                val usuarioActualizado = usuarioService.actualizarUsuario(usuario.id!!, request)
+                ResponseEntity.ok(usuarioActualizado.copy(password = null))
+            } catch (e: Exception) {
+                logger.error("Error al actualizar usuario: ${e.message}")
+                ResponseEntity.status(500).body(mapOf("error" to "Error al actualizar usuario"))
+            }
+        } else {
+            ResponseEntity.status(401).body(mapOf("error" to "Token inválido"))
         }
     }
 
