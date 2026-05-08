@@ -12,9 +12,11 @@ data class AnimalEntity(
     var nombre: String,
     var especie: String,
     var raza: String?,
+
+    @Column(name = "descripcion", length = 1000)
     var descripcion: String?,
 
-    @Column(name = "foto_url")
+    @Column(name = "foto_url", length = 1000)
     var fotoUrl: String?,
 
     @Column(name = "codigo_postal")

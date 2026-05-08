@@ -46,4 +46,17 @@ class AnimalService {
         logger.info("Mascota con id $id marcada como ADOPTADO")
         return actualizado.toAnimal()
     }
+
+    fun agregarAnimal(animal: Animal): Animal {
+
+        val entidadParaGuardar = animal.toAnimalEntity()
+
+        //Guardamos en la base de datos
+        val entidadGuardada = animalRepository.save(entidadParaGuardar)
+
+        logger.info("Nueva mascota agregada con id: ${entidadGuardada.id_animal}")
+
+
+        return entidadGuardada.toAnimal()
+    }
 }

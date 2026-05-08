@@ -1,11 +1,13 @@
 package com.lambdaTeam.sys.adoptaPerrito.controllers
 
+import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.toAnimalResponseDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -97,6 +99,13 @@ class AnimalController {
             ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
         }
     }
+
+    @PostMapping("/agregar")
+    fun agregar(@RequestBody animal: Animal): ResponseEntity<Animal> {
+        val nuevaMascota = animalService.agregarAnimal(animal)
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota)
+    }
+
 
     // Función de ayuda para validar el token y obtener el usuario
     private fun validarToken(authHeader: String?) = run {
