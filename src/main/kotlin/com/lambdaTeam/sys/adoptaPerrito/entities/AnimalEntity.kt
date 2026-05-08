@@ -18,5 +18,6 @@ data class AnimalEntity(
     var fotoUrl: String?,
 
     @Column(name = "codigo_postal")
-    var codigo_postal: String
+    var codigo_postal: String,
+    var estado: String = "DISPONIBLE"
 )

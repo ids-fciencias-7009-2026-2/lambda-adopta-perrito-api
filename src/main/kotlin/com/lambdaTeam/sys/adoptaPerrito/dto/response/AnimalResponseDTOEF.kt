@@ -10,6 +10,7 @@ fun Animal.toAnimalResponseDTO(): AnimalResponseDTO {
         raza = this.raza,
         descripcion = this.descripcion,
         fotoUrl = this.fotoUrl,
-        codigoPostal = this.codigoPostal
+        codigoPostal = this.codigoPostal,
+        estado = this.estado
     )
 }

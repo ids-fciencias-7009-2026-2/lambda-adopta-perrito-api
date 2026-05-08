@@ -9,6 +9,7 @@ fun Usuario.toUsuarioEntity(): UsuarioEntity {
         correo = this.email,
         codigo_postal = this.codigoPostal,
         contrasena = this.password ?: "",
-        token = ""
+        token = "",
+        rol = this.rol
     )
 }

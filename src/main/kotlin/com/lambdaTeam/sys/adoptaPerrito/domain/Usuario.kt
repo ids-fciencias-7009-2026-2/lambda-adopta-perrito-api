@@ -46,5 +46,7 @@ data class Usuario(
      */
     var password: String? = null,
 
-    var token: String? = null
+    var token: String? = null,
+
+    var rol: String = "USER"
 )
