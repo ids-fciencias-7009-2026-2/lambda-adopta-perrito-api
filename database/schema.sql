@@ -28,13 +28,14 @@ CREATE TABLE usuario (
 
 -- Crear tabla animal (CU4: Buscar mascota con filtros)
 CREATE TABLE animal (
-                        id_animal     SERIAL PRIMARY KEY,
-                        nombre        VARCHAR(100) NOT NULL,
-                        especie       VARCHAR(50) NOT NULL,
-                        raza          VARCHAR(100),
-                        descripcion   TEXT,
-                        foto_url      VARCHAR(255),
-                        codigo_postal VARCHAR(10) NOT NULL
+    id_animal     SERIAL PRIMARY KEY,
+    nombre        VARCHAR(100) NOT NULL,
+    especie       VARCHAR(50) NOT NULL,
+    raza          VARCHAR(100),
+    descripcion   TEXT,
+    foto_url      VARCHAR(255),
+    codigo_postal VARCHAR(10) NOT NULL,
+    id_usuario    INT REFERENCES usuario(id_usuario) -- AGREGA ESTA LÍNEA
 );
 
 -- Datos de prueba: Usuarios
