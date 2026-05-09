@@ -36,7 +36,8 @@ CREATE TABLE animal (
                         descripcion   TEXT,
                         foto_url      VARCHAR(255),
                         codigo_postal VARCHAR(10) NOT NULL,
-                        estado        VARCHAR(20)  DEFAULT 'DISPONIBLE'
+                        estado        VARCHAR(20)  DEFAULT 'DISPONIBLE', -- LO TUYO
+                        id_usuario    INT REFERENCES usuario(id_usuario) -- LO DE TU COMPA
 );
 
 -- Datos de prueba: Usuarios

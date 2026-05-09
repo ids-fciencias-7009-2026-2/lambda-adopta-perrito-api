@@ -4,6 +4,7 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.domain.toAnimal
 import com.lambdaTeam.sys.adoptaPerrito.entities.toAnimalEntity
 import com.lambdaTeam.sys.adoptaPerrito.repositories.AnimalRepository
+import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO // <-- Import de tu compa
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,15 +49,23 @@ class AnimalService {
     }
 
     fun agregarAnimal(animal: Animal): Animal {
-
         val entidadParaGuardar = animal.toAnimalEntity()
 
-        //Guardamos en la base de datos
+        // Guardamos en la base de datos
         val entidadGuardada = animalRepository.save(entidadParaGuardar)
 
         logger.info("Nueva mascota agregada con id: ${entidadGuardada.id_animal}")
 
-
         return entidadGuardada.toAnimal()
+    }
+
+
+    fun obtenerCorreoDelDueño(id: Int): ContactoResponseDTO {
+        val animal = animalRepository.findById(id)
+            .orElseThrow { NoSuchElementException("No se encontró el animal con id: $id") }
+
+        // Obtenemos el correo del objeto usuario asociado
+        val email = animal.usuario?.correo ?: "Correo no disponible"
+        return ContactoResponseDTO(email)
     }
 }

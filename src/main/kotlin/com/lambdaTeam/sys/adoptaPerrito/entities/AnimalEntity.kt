@@ -21,5 +21,12 @@ data class AnimalEntity(
 
     @Column(name = "codigo_postal")
     var codigo_postal: String,
-    var estado: String = "DISPONIBLE"
+
+
+    var estado: String = "DISPONIBLE",
+
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario")
+    var usuario: UsuarioEntity? = null
 )

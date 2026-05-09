@@ -4,6 +4,7 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.toAnimalResponseDTO
+import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO // <-- Import que agregó tu compañero
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,9 +12,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-@CrossOrigin(origins = ["http://localhost:5173"])
+@CrossOrigin(origins = ["http://localhost:5173"]) // Mantenemos tu configuración de CORS
 @RestController
-@RequestMapping("/animales")
+@RequestMapping("/animales") // Mantenemos tu ruta sin el "/api" que rompía todo
 class AnimalController {
 
     @Autowired
@@ -106,6 +107,12 @@ class AnimalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota)
     }
 
+
+    @GetMapping("/{id}/contacto")
+    fun getContacto(@PathVariable id: Int): ResponseEntity<ContactoResponseDTO> {
+        val contacto = animalService.obtenerCorreoDelDueño(id)
+        return ResponseEntity.ok(contacto)
+    }
 
     // Función de ayuda para validar el token y obtener el usuario
     private fun validarToken(authHeader: String?) = run {
