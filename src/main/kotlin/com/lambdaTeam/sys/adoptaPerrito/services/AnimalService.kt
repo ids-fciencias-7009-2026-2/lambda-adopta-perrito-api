@@ -2,40 +2,68 @@ package com.lambdaTeam.sys.adoptaPerrito.services
 
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.domain.toAnimal
-import com.lambdaTeam.sys.adoptaPerrito.entities.toAnimalEntity
+import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO
+import com.lambdaTeam.sys.adoptaPerrito.entities.AnimalEntity
+import com.lambdaTeam.sys.adoptaPerrito.entities.UsuarioEntity
 import com.lambdaTeam.sys.adoptaPerrito.repositories.AnimalRepository
-import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO // <-- Import de tu compa
+import com.lambdaTeam.sys.adoptaPerrito.repositories.UsuarioRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class AnimalService {
+
     val logger: Logger = LoggerFactory.getLogger(AnimalService::class.java)
 
     @Autowired
     lateinit var animalRepository: AnimalRepository
 
-    fun buscarMascotas(especie: String?, raza: String?, codigoPostal: String?): List<Animal> {
-        val entidades = animalRepository.findByFilters(especie, raza, codigoPostal)
-        logger.info("Mascotas encontradas en la búsqueda: ${entidades.size}")
+    @Autowired
+    lateinit var usuarioRepository: UsuarioRepository
+
+    fun buscarMascotas(
+        especie: String?,
+        raza: String?,
+        codigoPostal: String?
+    ): List<Animal> {
+
+        val entidades = animalRepository.findByFilters(
+            especie,
+            raza,
+            codigoPostal
+        )
+
+        logger.info("Mascotas encontradas: ${entidades.size}")
+
         return entidades.map { it.toAnimal() }
     }
 
     fun buscarPorId(id: Int): Animal? {
+
         val entidad = animalRepository.findById(id).orElse(null)
+
         logger.info("Buscando mascota con id: $id")
+
         return entidad?.toAnimal()
     }
 
     fun eliminarAnimal(id: Int): Boolean {
+
         return if (animalRepository.existsById(id)) {
+
             animalRepository.deleteById(id)
-            logger.info("Mascota con id $id eliminada correctamente")
+
+            logger.info("Mascota eliminada con id: $id")
+
             true
+
         } else {
-            logger.warn("No se encontró mascota con id $id para eliminar")
+
+            logger.warn("No se encontró mascota con id: $id")
+
             false
         }
     }
@@ -48,24 +76,70 @@ class AnimalService {
         return actualizado.toAnimal()
     }
 
-    fun agregarAnimal(animal: Animal): Animal {
-        val entidadParaGuardar = animal.toAnimalEntity()
+    fun agregarAnimal(animal: Animal, idUsuario: Int): Animal {
 
-        // Guardamos en la base de datos
-        val entidadGuardada = animalRepository.save(entidadParaGuardar)
+        logger.info("Agregando mascota para usuario: $idUsuario")
 
-        logger.info("Nueva mascota agregada con id: ${entidadGuardada.id_animal}")
+        val dueño = usuarioRepository.findById(idUsuario)
+            .orElseThrow {
+                NoSuchElementException(
+                    "No se encontró usuario con id: $idUsuario"
+                )
+            }
 
-        return entidadGuardada.toAnimal()
+        val entidad = AnimalEntity(
+            nombre = animal.nombre,
+            especie = animal.especie,
+            raza = animal.raza,
+            descripcion = animal.descripcion,
+            fotoUrl = animal.fotoUrl,
+            codigo_postal = animal.codigoPostal,
+            estado = animal.estado,
+            usuario = dueño
+        )
+
+        logger.info("Usuario asignado: ${dueño.correo}")
+
+        val guardado = animalRepository.save(entidad)
+
+        logger.info(
+            "Mascota guardada correctamente con id: ${guardado.id_animal}"
+        )
+
+        return guardado.toAnimal()
     }
 
 
-    fun obtenerCorreoDelDueño(id: Int): ContactoResponseDTO {
-        val animal = animalRepository.findById(id)
-            .orElseThrow { NoSuchElementException("No se encontró el animal con id: $id") }
 
-        // Obtenemos el correo del objeto usuario asociado
-        val email = animal.usuario?.correo ?: "Correo no disponible"
-        return ContactoResponseDTO(email)
+    fun obtenerCorreoYNotificar(
+        id: Int,
+        adoptante: UsuarioEntity
+    ): ContactoResponseDTO {
+
+        val animal = animalRepository.findById(id)
+            .orElseThrow {
+                NoSuchElementException(
+                    "No se encontró el animal con id: $id"
+                )
+            }
+
+        val emailDestino =
+            animal.usuario?.correo ?: "Correo no disponible"
+
+        logger.info(
+            "Notificación enviada a: $emailDestino"
+        )
+
+        println("\n" + "=".repeat(40))
+        println("📧 [ALERTA DE INTERÉS]")
+        println("DE: ${adoptante.correo}")
+        println("PARA EL DUEÑO: $emailDestino")
+        println(
+            "MENSAJE: ¡Hola! El usuario ${adoptante.nombre} " +
+                    "está interesado en ${animal.nombre}."
+        )
+        println("=".repeat(40) + "\n")
+
+        return ContactoResponseDTO(emailDestino)
     }
 }

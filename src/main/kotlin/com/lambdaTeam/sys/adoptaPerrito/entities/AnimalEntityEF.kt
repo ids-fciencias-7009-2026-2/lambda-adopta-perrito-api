@@ -11,6 +11,8 @@ fun Animal.toAnimalEntity(): AnimalEntity {
         descripcion = this.descripcion,
         fotoUrl = this.fotoUrl,
         codigo_postal = this.codigoPostal,
-        estado = this.estado
+        estado = this.estado,
+        usuario = this.usuario?.toUsuarioEntity()
+
     )
 }

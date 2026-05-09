@@ -26,7 +26,10 @@ data class AnimalEntity(
     var estado: String = "DISPONIBLE",
 
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(
+        name = "id_usuario",
+        referencedColumnName = "id_usuario"
+    )
     var usuario: UsuarioEntity? = null
 )
