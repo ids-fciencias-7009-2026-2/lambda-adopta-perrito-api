@@ -7,5 +7,6 @@ data class AnimalResponseDTO(
     val raza: String?,
     val descripcion: String?,
     val fotoUrl: String?,
-    val codigoPostal: String
+    val codigoPostal: String,
+    val estado: String
 )

@@ -19,5 +19,6 @@ data class UsuarioEntity(
     var correo: String,
     var codigo_postal: String,
     var contrasena: String,
-    var token: String?
+    var token: String?,
+    var rol: String = "USER"
 )

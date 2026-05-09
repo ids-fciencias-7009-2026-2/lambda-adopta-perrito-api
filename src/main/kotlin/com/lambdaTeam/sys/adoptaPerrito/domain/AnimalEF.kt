@@ -10,6 +10,8 @@ fun AnimalEntity.toAnimal(): Animal {
         raza = this.raza,
         descripcion = this.descripcion,
         fotoUrl = this.fotoUrl,
-        codigoPostal = this.codigo_postal
+        codigoPostal = this.codigo_postal,
+        estado = this.estado,
+        usuario = this.usuario?.toUsuario()
     )
 }

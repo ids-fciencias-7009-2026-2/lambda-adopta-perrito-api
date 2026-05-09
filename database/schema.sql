@@ -23,19 +23,21 @@ CREATE TABLE usuario (
                          correo        VARCHAR(100) NOT NULL UNIQUE,
                          codigo_postal VARCHAR(10),
                          contrasena    VARCHAR(100) NOT NULL,
-                         token         VARCHAR(100)
+                         token         VARCHAR(100),
+                         rol           VARCHAR(20) DEFAULT 'USER'
 );
 
 -- Crear tabla animal (CU4: Buscar mascota con filtros)
 CREATE TABLE animal (
-    id_animal     SERIAL PRIMARY KEY,
-    nombre        VARCHAR(100) NOT NULL,
-    especie       VARCHAR(50) NOT NULL,
-    raza          VARCHAR(100),
-    descripcion   TEXT,
-    foto_url      VARCHAR(255),
-    codigo_postal VARCHAR(10) NOT NULL,
-    id_usuario    INT REFERENCES usuario(id_usuario) -- AGREGA ESTA LÍNEA
+                        id_animal     SERIAL PRIMARY KEY,
+                        nombre        VARCHAR(100) NOT NULL,
+                        especie       VARCHAR(50) NOT NULL,
+                        raza          VARCHAR(100),
+                        descripcion   TEXT,
+                        foto_url      VARCHAR(255),
+                        codigo_postal VARCHAR(10) NOT NULL,
+                        estado        VARCHAR(20)  DEFAULT 'DISPONIBLE', -- LO TUYO
+                        id_usuario    INT REFERENCES usuario(id_usuario) -- LO DE TU COMPA
 );
 
 -- Datos de prueba: Usuarios
@@ -45,6 +47,11 @@ VALUES
     ('Benito Hernandez',   'benito.h@ciencias.unam.mx', '04360', 'password_encriptada_456', 'tdz_token_fragment_zdq123'),
     ('Luis Ricardo',       'luis.ricardo@unam.mx',      '09243', 'admin_pass_789',          'token_acceso_rapido_xyz'),
     ('Federica Dominguez', 'test@dominio.com',           '05612', 'test_password_000',       'olg_token_fragment_uas');
+
+-- Datos de prueba: Admin
+INSERT INTO usuario (nombre, correo, codigo_postal, contrasena, token, rol)
+VALUES
+    ('Admin Lambda', 'admin@adopta.com', '04510', 'hash_seguro_123', null, 'ADMIN');
 
 -- Datos de prueba: Animales
 INSERT INTO animal (nombre, especie, raza, descripcion, foto_url, codigo_postal)

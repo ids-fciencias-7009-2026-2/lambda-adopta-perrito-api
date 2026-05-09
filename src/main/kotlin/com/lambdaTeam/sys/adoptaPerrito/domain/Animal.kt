@@ -10,5 +10,7 @@ data class Animal(
     var raza: String? = null,
     var descripcion: String? = null,
     var fotoUrl: String? = null,
-    var codigoPostal: String
+    var codigoPostal: String,
+    var estado: String = "DISPONIBLE",
+    var usuario: Usuario? = null
 )
