@@ -1,5 +1,5 @@
 package com.lambdaTeam.sys.adoptaPerrito.services
-
+import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateAnimalRequest
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.domain.toAnimal
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO
@@ -141,5 +141,26 @@ class AnimalService {
         println("=".repeat(40) + "\n")
 
         return ContactoResponseDTO(emailDestino)
+    }
+
+    fun editarAnimal(id: Int, request: UpdateAnimalRequest, idUsuario: Int, rolUsuario: String): Animal? {
+        val entidad = animalRepository.findById(id).orElse(null) ?: return null
+
+        // solo el dueño o un admin pueden editar
+        if (rolUsuario != "ADMIN" && entidad.usuario?.id_usuario != idUsuario) {
+            throw SecurityException("No tienes permisos para editar esta mascota")
+        }
+
+        // aplicamos solo los campos que vienen en el request
+        request.nombre?.let { entidad.nombre = it }
+        request.especie?.let { entidad.especie = it }
+        request.raza?.let { entidad.raza = it }
+        request.descripcion?.let { entidad.descripcion = it }
+        request.fotoUrl?.let { entidad.fotoUrl = it }
+        request.codigoPostal?.let { entidad.codigo_postal = it }
+
+        val actualizado = animalRepository.save(entidad)
+        logger.info("Mascota con id $id actualizada por usuario $idUsuario")
+        return actualizado.toAnimal()
     }
 }

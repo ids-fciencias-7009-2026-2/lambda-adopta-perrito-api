@@ -11,6 +11,7 @@ fun Animal.toAnimalResponseDTO(): AnimalResponseDTO {
         descripcion = this.descripcion,
         fotoUrl = this.fotoUrl,
         codigoPostal = this.codigoPostal,
-        estado = this.estado
+        estado = this.estado,
+        idUsuario = this.usuario?.id
     )
 }

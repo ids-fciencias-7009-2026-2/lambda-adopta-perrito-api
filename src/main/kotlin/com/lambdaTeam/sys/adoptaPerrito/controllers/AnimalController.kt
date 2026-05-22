@@ -1,5 +1,5 @@
 package com.lambdaTeam.sys.adoptaPerrito.controllers
-
+import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateAnimalRequest
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
@@ -117,6 +117,28 @@ class AnimalController {
         // Se pasa el ID del usuario logueado al service para la llave foránea
         val nuevaMascota = animalService.agregarAnimal(animal, usuarioLogueado.id!!)
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota)
+    }
+
+
+    @PutMapping("/{id}/editar")
+    fun editarAnimal(
+        @RequestHeader("Authorization", required = false) authHeader: String?,
+        @PathVariable id: Int,
+        @RequestBody request: UpdateAnimalRequest
+    ): ResponseEntity<Any> {
+        val usuario = validarToken(authHeader)
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
+
+        return try {
+            val actualizado = animalService.editarAnimal(id, request, usuario.id!!, usuario.rol)
+            if (actualizado != null) {
+                ResponseEntity.ok(actualizado.toAnimalResponseDTO())
+            } else {
+                ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+            }
+        } catch (e: SecurityException) {
+            ResponseEntity.status(403).body(mapOf("error" to e.message))
+        }
     }
 
 
