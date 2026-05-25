@@ -11,6 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.io.File
+import java.util.UUID
 
 @CrossOrigin(origins = ["http://localhost:5173"])
 @RestController
@@ -105,16 +110,57 @@ class AnimalController {
         }
     }
 
-
     @PostMapping("/agregar")
     fun agregar(
         @RequestHeader("Authorization") authHeader: String,
-        @RequestBody animal: Animal
+        @RequestParam("nombre") nombre: String,
+        @RequestParam("especie") especie: String,
+        @RequestParam("raza", required = false) raza: String?,
+        @RequestParam("descripcion", required = false) descripcion: String?,
+        @RequestParam("codigoPostal") codigoPostal: String,
+        @RequestParam("archivoImagen", required = false) archivoImagen: MultipartFile?
     ): ResponseEntity<Any> {
+
         val usuarioLogueado = validarToken(authHeader)
             ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-        // Se pasa el ID del usuario logueado al service para la llave foránea
+        var rutaFotoLocal = ""
+
+        //Lógica para guardar el archivo en la PC/Servidor
+        if (archivoImagen != null && !archivoImagen.isEmpty) {
+            try {
+                // Creamos una carpeta llamada 'uploads/mascotas' en la raíz de tu proyecto
+                val directorio = File("uploads/mascotas/")
+                if (!directorio.exists()) {
+                    directorio.mkdirs()
+                }
+
+                // Generamos un nombre único (UUID) para evitar que dos fotos con el mismo nombre se sobreescriban
+                val nombreUnico = UUID.randomUUID().toString() + "_" + archivoImagen.originalFilename
+                val rutaDestino = Paths.get(directorio.absolutePath, nombreUnico)
+
+                // Guardamos el archivo físicamente
+                Files.write(rutaDestino, archivoImagen.bytes)
+
+                // Guardamos el nombre/ruta que se irá a la Base de Datos
+                rutaFotoLocal = "/imagenes/$nombreUnico"
+
+            } catch (e: Exception) {
+                logger.error("Error al guardar la imagen: \${e.message}")
+                return ResponseEntity.status(500).body(mapOf("error" to "No se pudo guardar la imagen de la mascota"))
+            }
+        }
+
+        // Construimos el objeto Animal manualmente con los datos recibidos
+        val animal = Animal(
+            nombre = nombre,
+            especie = especie,
+            raza = raza ?: "",
+            descripcion = descripcion ?: "",
+            codigoPostal = codigoPostal,
+            fotoUrl = rutaFotoLocal
+        )
+
         val nuevaMascota = animalService.agregarAnimal(animal, usuarioLogueado.id!!)
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota)
     }
@@ -122,22 +168,63 @@ class AnimalController {
 
     @PutMapping("/{id}/editar")
     fun editarAnimal(
-        @RequestHeader("Authorization", required = false) authHeader: String?,
         @PathVariable id: Int,
-        @RequestBody request: UpdateAnimalRequest
+        @RequestHeader("Authorization", required = false) authHeader: String?,
+        @RequestParam(value = "nombre", required = false) nombre: String?,
+        @RequestParam(value = "especie", required = false) especie: String?,
+        @RequestParam(value = "raza", required = false) raza: String?,
+        @RequestParam(value = "descripcion", required = false) descripcion: String?,
+        @RequestParam(value = "codigoPostal", required = false) codigoPostal: String?,
+        @RequestParam(value = "archivoImagen", required = false) archivoImagen: MultipartFile?
     ): ResponseEntity<Any> {
-        val usuario = validarToken(authHeader)
-            ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
+        // Envolvemos TODO en un try-catch global para evitar que React se quede colgado
+        try {
+            val usuario = validarToken(authHeader)
+                ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-        return try {
+            // 1. Buscamos la mascota actual
+            val animalExistente = animalService.buscarPorId(id)
+                ?: return ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+
+            var rutaFotoFinal = animalExistente.fotoUrl
+
+            // 2. Si viene una nueva imagen, la procesamos
+            if (archivoImagen != null && !archivoImagen.isEmpty) {
+                val directorio = File("uploads/mascotas/")
+                if (!directorio.exists()) {
+                    directorio.mkdirs()
+                }
+
+                val nombreUnico = UUID.randomUUID().toString() + "_" + archivoImagen.originalFilename
+                val rutaDestino = Paths.get(directorio.absolutePath, nombreUnico)
+
+                Files.write(rutaDestino, archivoImagen.bytes)
+                rutaFotoFinal = "/imagenes/$nombreUnico"
+            }
+
+            // 3. Armamos el Request
+            val request = UpdateAnimalRequest(
+                nombre = nombre,
+                especie = especie,
+                raza = raza,
+                descripcion = descripcion,
+                codigoPostal = codigoPostal,
+                fotoUrl = rutaFotoFinal
+            )
+
             val actualizado = animalService.editarAnimal(id, request, usuario.id!!, usuario.rol)
-            if (actualizado != null) {
+            return if (actualizado != null) {
                 ResponseEntity.ok(actualizado.toAnimalResponseDTO())
             } else {
                 ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
             }
+
         } catch (e: SecurityException) {
-            ResponseEntity.status(403).body(mapOf("error" to e.message))
+            return ResponseEntity.status(403).body(mapOf("error" to e.message))
+        } catch (e: Exception) {
+            // ¡ESTO ES CLAVE! Si algo falla, registramos el error y le avisamos a React para que no se quede colgado
+            logger.error("Error crítico en editarAnimal: ${e.message}", e)
+            return ResponseEntity.status(500).body(mapOf("error" to "Error interno en el servidor: ${e.message}"))
         }
     }
 
