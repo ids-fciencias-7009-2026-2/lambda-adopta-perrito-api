@@ -4,6 +4,7 @@ import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.toAnimalResponseDTO
+import com.lambdaTeam.sys.adoptaPerrito.services.EmailService
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.ContactoResponseDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,6 +28,9 @@ class AnimalController {
 
     @Autowired
     lateinit var usuarioService: UsuarioService
+
+    @Autowired
+    lateinit var emailService: EmailService
 
     val logger: Logger = LoggerFactory.getLogger(AnimalController::class.java)
 
@@ -182,13 +186,13 @@ class AnimalController {
             val usuario = validarToken(authHeader)
                 ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-            // 1. Buscamos la mascota actual
+            //Buscamos la mascota actual
             val animalExistente = animalService.buscarPorId(id)
                 ?: return ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
 
             var rutaFotoFinal = animalExistente.fotoUrl
 
-            // 2. Si viene una nueva imagen, la procesamos
+            //Si viene una nueva imagen, la procesamos
             if (archivoImagen != null && !archivoImagen.isEmpty) {
                 val directorio = File("uploads/mascotas/")
                 if (!directorio.exists()) {
@@ -202,7 +206,7 @@ class AnimalController {
                 rutaFotoFinal = "/imagenes/$nombreUnico"
             }
 
-            // 3. Armamos el Request
+            // Arma el Request
             val request = UpdateAnimalRequest(
                 nombre = nombre,
                 especie = especie,
@@ -222,9 +226,49 @@ class AnimalController {
         } catch (e: SecurityException) {
             return ResponseEntity.status(403).body(mapOf("error" to e.message))
         } catch (e: Exception) {
-            // ¡ESTO ES CLAVE! Si algo falla, registramos el error y le avisamos a React para que no se quede colgado
+
             logger.error("Error crítico en editarAnimal: ${e.message}", e)
             return ResponseEntity.status(500).body(mapOf("error" to "Error interno en el servidor: ${e.message}"))
+        }
+    }
+
+
+    @PostMapping("/{id}/enviar-interes")
+    fun enviarInteres(
+        @RequestHeader("Authorization") authHeader: String,
+        @PathVariable id: Int
+    ): ResponseEntity<Any> {
+        try {
+            val adoptante = validarToken(authHeader)
+                ?: return ResponseEntity.status(401).body(mapOf("error" to "No autorizado"))
+
+            val adoptanteEntity = usuarioService.usuarioRepository.findById(adoptante.id!!).orElse(null)
+                ?: return ResponseEntity.status(404).body(mapOf("error" to "Usuario no encontrado"))
+
+            val animal = animalService.buscarPorId(id)
+                ?: return ResponseEntity.status(404).body(mapOf("error" to "Mascota no encontrada"))
+
+            val contacto = animalService.obtenerCorreoYNotificar(id, adoptanteEntity)
+
+
+            val correoDueno = contacto.correo
+
+            if (correoDueno.isNullOrEmpty()) {
+                return ResponseEntity.status(400).body(mapOf("error" to "El dueño de la mascota no tiene un correo válido"))
+            }
+
+            emailService.enviarCorreo(
+                correoDueno = correoDueno,
+                nombreMascota = animal.nombre,
+                correoAdoptante = adoptante.email
+            )
+
+            logger.info("Correo enviado exitosamente a $correoDueno sobre la mascota ${animal.nombre}")
+            return ResponseEntity.ok(mapOf("mensaje" to "Correo enviado con éxito", "correo" to correoDueno))
+
+        } catch (e: Exception) {
+            logger.error("Error al enviar el correo de adopción: ${e.message}", e)
+            return ResponseEntity.status(500).body(mapOf("error" to "Ocurrió un error al intentar enviar el correo"))
         }
     }
 
