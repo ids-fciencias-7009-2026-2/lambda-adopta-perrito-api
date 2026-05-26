@@ -1,6 +1,7 @@
 package com.lambdaTeam.sys.adoptaPerrito.controllers
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateAnimalRequest
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
+import com.lambdaTeam.sys.adoptaPerrito.dto.response.AnimalResponseDTO
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
 import com.lambdaTeam.sys.adoptaPerrito.services.UsuarioService
 import com.lambdaTeam.sys.adoptaPerrito.dto.response.toAnimalResponseDTO
@@ -286,6 +287,35 @@ class AnimalController {
 
         val contacto = animalService.obtenerCorreoYNotificar(id, adoptanteEntity)
         return ResponseEntity.ok(contacto)
+    }
+
+    @GetMapping("/mis-animales")
+    fun obtenerMisAnimales(
+        @RequestHeader("Authorization") authHeader: String
+    ): ResponseEntity<Any> {
+
+        val usuario = validarToken(authHeader)
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
+
+        // Buscamos los animales que le pertenecen a este usuario en específico
+
+        val misMascotas = animalService.obtenerPorUsuarioId(usuario.id!!)
+
+        val responseDTOs = misMascotas.map { animal ->
+            AnimalResponseDTO(
+                id = animal.id_animal!!,
+                nombre = animal.nombre,
+                especie = animal.especie,
+                raza = animal.raza,
+                descripcion = animal.descripcion,
+                fotoUrl = animal.fotoUrl,
+                codigoPostal = animal.codigo_postal,
+                estado = animal.estado,
+                idUsuario = animal.usuario?.id_usuario)
+        }
+
+
+        return ResponseEntity.ok(responseDTOs)
     }
 
     // Función de ayuda para validar el token y obtener el usuario

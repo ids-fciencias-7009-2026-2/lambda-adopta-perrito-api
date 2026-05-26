@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 
 @Repository
 interface AnimalRepository : CrudRepository<AnimalEntity, Int> {
@@ -20,4 +21,8 @@ interface AnimalRepository : CrudRepository<AnimalEntity, Int> {
         @Param("raza") raza: String?,
         @Param("cp") cp: String?
     ): List<AnimalEntity>
+
+
+    @Query("SELECT a FROM AnimalEntity a WHERE a.usuario.id_usuario = :usuarioId")
+    fun findByUsuarioId(@Param("usuarioId") usuarioId: Int): List<AnimalEntity>
 }

@@ -109,6 +109,9 @@ class AnimalService {
         return guardado.toAnimal()
     }
 
+    fun obtenerPorUsuarioId(usuarioId: Int): List<AnimalEntity> {
+        return animalRepository.findByUsuarioId(usuarioId)
+    }
 
 
     fun obtenerCorreoYNotificar(
