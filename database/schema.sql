@@ -23,8 +23,7 @@ CREATE TABLE usuario (
                          correo        VARCHAR(100) NOT NULL UNIQUE,
                          codigo_postal VARCHAR(10),
                          contrasena    VARCHAR(100) NOT NULL,
-                         token         VARCHAR(100),
-                         rol           VARCHAR(20) DEFAULT 'USER'
+                         token         VARCHAR(100)
 );
 
 -- Crear tabla animal (CU4: Buscar mascota con filtros)
@@ -39,25 +38,3 @@ CREATE TABLE animal (
                         estado        VARCHAR(20)  DEFAULT 'DISPONIBLE', -- LO TUYO
                         id_usuario    INT REFERENCES usuario(id_usuario) -- LO DE TU COMPA
 );
-
--- Datos de prueba: Usuarios
-INSERT INTO usuario (nombre, correo, codigo_postal, contrasena, token)
-VALUES
-    ('Ramon Diaz',         'ramonn.d@ciencias.unam.mx', '04510', 'hash_seguro_123',         'jwt_token_fragment_abc123'),
-    ('Benito Hernandez',   'benito.h@ciencias.unam.mx', '04360', 'password_encriptada_456', 'tdz_token_fragment_zdq123'),
-    ('Luis Ricardo',       'luis.ricardo@unam.mx',      '09243', 'admin_pass_789',          'token_acceso_rapido_xyz'),
-    ('Federica Dominguez', 'test@dominio.com',           '05612', 'test_password_000',       'olg_token_fragment_uas');
-
--- Datos de prueba: Admin
-INSERT INTO usuario (nombre, correo, codigo_postal, contrasena, token, rol)
-VALUES
-    ('Admin Lambda', 'admin@adopta.com', '04510', 'hash_seguro_123', null, 'ADMIN');
-
--- Datos de prueba: Animales
-INSERT INTO animal (nombre, especie, raza, descripcion, foto_url, codigo_postal)
-VALUES
-    ('Firulais', 'Perro', 'Beagle', 'Un perrito muy alegre y sociable, ideal para familias.', 'https://images.unsplash.com/photo-1543466835-00a7907e9de1', '04510'),
-    ('Michi', 'Gato', 'Siamés', 'Gato elegante y muy tranquilo. Le encanta dormir al sol.', 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba', '11000'),
-    ('Rex', 'Perro', 'Labrador', 'Excelente compañero para salir a correr, muy obediente.', 'https://images.unsplash.com/photo-1552053831-71594a27632d', '04510'),
-    ('Luna', 'Gato', 'Mestizo', 'Gatita rescatada, un poco tímida al principio pero muy cariñosa.', 'https://images.unsplash.com/photo-1533733358354-29973cd6a8b8', '04510'),
-    ('Simba', 'Perro', 'Golden Retriever', 'Cachorro lleno de energía, busca un hogar con jardín.', 'https://images.unsplash.com/photo-1552053831-71594a27632d', '06600');

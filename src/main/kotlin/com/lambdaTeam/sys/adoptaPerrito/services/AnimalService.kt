@@ -1,4 +1,5 @@
 package com.lambdaTeam.sys.adoptaPerrito.services
+
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateAnimalRequest
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.domain.toAnimal
@@ -29,63 +30,58 @@ class AnimalService {
         raza: String?,
         codigoPostal: String?
     ): List<Animal> {
-
-        val entidades = animalRepository.findByFilters(
-            especie,
-            raza,
-            codigoPostal
-        )
-
+        val entidades = animalRepository.findByFilters(especie, raza, codigoPostal)
         logger.info("Mascotas encontradas: ${entidades.size}")
-
         return entidades.map { it.toAnimal() }
     }
 
     fun buscarPorId(id: Int): Animal? {
-
         val entidad = animalRepository.findById(id).orElse(null)
-
         logger.info("Buscando mascota con id: $id")
-
         return entidad?.toAnimal()
     }
 
-    fun eliminarAnimal(id: Int): Boolean {
-
-        return if (animalRepository.existsById(id)) {
-
-            animalRepository.deleteById(id)
-
-            logger.info("Mascota eliminada con id: $id")
-
-            true
-
-        } else {
-
-            logger.warn("No se encontró mascota con id: $id")
-
-            false
-        }
+    // NUEVO: Solo retorna las mascotas del usuario actual
+    fun obtenerMisAnimales(idUsuario: Int): List<Animal> {
+        // Aprovechamos la relación ya existente en JPA
+        val todas = animalRepository.findAll().toList()
+        val misMascotas = todas.filter { it.usuario?.id_usuario == idUsuario }
+        logger.info("Se encontraron ${misMascotas.size} mascotas para el usuario $idUsuario")
+        return misMascotas.map { it.toAnimal() }
     }
 
-    fun marcarComoAdoptado(id: Int): Animal? {
+    // MODIFICADO: Valida que quien elimina sea el dueño
+    fun eliminarAnimal(id: Int, idUsuario: Int): Boolean {
+        val entidad = animalRepository.findById(id).orElse(null) ?: return false
+
+        if (entidad.usuario?.id_usuario != idUsuario) {
+            throw SecurityException("No tienes permisos para eliminar esta mascota")
+        }
+
+        animalRepository.deleteById(id)
+        logger.info("Mascota eliminada con id: $id")
+        return true
+    }
+
+    fun marcarComoAdoptado(id: Int, idUsuario: Int): Animal? {
         val entidad = animalRepository.findById(id).orElse(null) ?: return null
-        entidad.estado = "ADOPTADO"
+
+        if (entidad.usuario?.id_usuario != idUsuario) {
+            throw SecurityException("No tienes permisos para modificar el estado de esta mascota")
+        }
+
+        entidad.estado = if (entidad.estado == "ADOPTADO") "DISPONIBLE" else "ADOPTADO"
+
         val actualizado = animalRepository.save(entidad)
-        logger.info("Mascota con id $id marcada como ADOPTADO")
+        logger.info("Mascota con id $id cambió su estado a ${entidad.estado} por su dueño")
         return actualizado.toAnimal()
     }
 
     fun agregarAnimal(animal: Animal, idUsuario: Int): Animal {
-
         logger.info("Agregando mascota para usuario: $idUsuario")
 
         val dueño = usuarioRepository.findById(idUsuario)
-            .orElseThrow {
-                NoSuchElementException(
-                    "No se encontró usuario con id: $idUsuario"
-                )
-            }
+            .orElseThrow { NoSuchElementException("No se encontró usuario con id: $idUsuario") }
 
         val entidad = AnimalEntity(
             nombre = animal.nombre,
@@ -99,59 +95,38 @@ class AnimalService {
         )
 
         logger.info("Usuario asignado: ${dueño.correo}")
-
         val guardado = animalRepository.save(entidad)
-
-        logger.info(
-            "Mascota guardada correctamente con id: ${guardado.id_animal}"
-        )
+        logger.info("Mascota guardada correctamente con id: ${guardado.id_animal}")
 
         return guardado.toAnimal()
     }
 
-
-
-    fun obtenerCorreoYNotificar(
-        id: Int,
-        adoptante: UsuarioEntity
-    ): ContactoResponseDTO {
-
+    fun obtenerCorreoYNotificar(id: Int, adoptante: UsuarioEntity): ContactoResponseDTO {
         val animal = animalRepository.findById(id)
-            .orElseThrow {
-                NoSuchElementException(
-                    "No se encontró el animal con id: $id"
-                )
-            }
+            .orElseThrow { NoSuchElementException("No se encontró el animal con id: $id") }
 
-        val emailDestino =
-            animal.usuario?.correo ?: "Correo no disponible"
-
-        logger.info(
-            "Notificación enviada a: $emailDestino"
-        )
+        val emailDestino = animal.usuario?.correo ?: "Correo no disponible"
+        logger.info("Notificación enviada a: $emailDestino")
 
         println("\n" + "=".repeat(40))
         println("📧 [ALERTA DE INTERÉS]")
         println("DE: ${adoptante.correo}")
         println("PARA EL DUEÑO: $emailDestino")
-        println(
-            "MENSAJE: ¡Hola! El usuario ${adoptante.nombre} " +
-                    "está interesado en ${animal.nombre}."
-        )
+        println("MENSAJE: ¡Hola! El usuario ${adoptante.nombre} está interesado en ${animal.nombre}.")
         println("=".repeat(40) + "\n")
 
         return ContactoResponseDTO(emailDestino)
     }
 
-    fun editarAnimal(id: Int, request: UpdateAnimalRequest, idUsuario: Int, rolUsuario: String): Animal? {
+    // MODIFICADO: Ya no valida roles, solo dueños
+    fun editarAnimal(id: Int, request: UpdateAnimalRequest, idUsuario: Int): Animal? {
         val entidad = animalRepository.findById(id).orElse(null) ?: return null
 
-        // solo el dueño o un admin pueden editar
-        if (rolUsuario != "ADMIN" && entidad.usuario?.id_usuario != idUsuario) {
+        // Solo el dueño puede editar
+        if (entidad.usuario?.id_usuario != idUsuario) {
             throw SecurityException("No tienes permisos para editar esta mascota")
         }
 
-        // aplicamos solo los campos que vienen en el request
         request.nombre?.let { entidad.nombre = it }
         request.especie?.let { entidad.especie = it }
         request.raza?.let { entidad.raza = it }
@@ -160,7 +135,7 @@ class AnimalService {
         request.codigoPostal?.let { entidad.codigo_postal = it }
 
         val actualizado = animalRepository.save(entidad)
-        logger.info("Mascota con id $id actualizada por usuario $idUsuario")
+        logger.info("Mascota con id $id actualizada por su dueño $idUsuario")
         return actualizado.toAnimal()
     }
 }

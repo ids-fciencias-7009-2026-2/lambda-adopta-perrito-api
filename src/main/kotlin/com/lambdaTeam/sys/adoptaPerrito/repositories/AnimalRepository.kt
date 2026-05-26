@@ -20,4 +20,7 @@ interface AnimalRepository : CrudRepository<AnimalEntity, Int> {
         @Param("raza") raza: String?,
         @Param("cp") cp: String?
     ): List<AnimalEntity>
+
+    @Query("select a from AnimalEntity a where a.usuario.id_usuario = :idUsuario")
+    fun findByUsuarioId(@Param("idUsuario") idUsuario: Int): List<AnimalEntity>
 }

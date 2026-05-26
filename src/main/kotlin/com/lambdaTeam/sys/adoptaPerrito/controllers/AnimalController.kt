@@ -1,4 +1,5 @@
 package com.lambdaTeam.sys.adoptaPerrito.controllers
+
 import com.lambdaTeam.sys.adoptaPerrito.dto.request.UpdateAnimalRequest
 import com.lambdaTeam.sys.adoptaPerrito.domain.Animal
 import com.lambdaTeam.sys.adoptaPerrito.services.AnimalService
@@ -30,7 +31,6 @@ class AnimalController {
 
     val logger: Logger = LoggerFactory.getLogger(AnimalController::class.java)
 
-
     @GetMapping("/buscar")
     fun buscarAnimales(
         @RequestHeader("Authorization", required = false) authHeader: String?,
@@ -51,7 +51,6 @@ class AnimalController {
         }
     }
 
-
     @GetMapping("/{id}")
     fun obtenerAnimalPorId(
         @RequestHeader("Authorization", required = false) authHeader: String?,
@@ -68,7 +67,6 @@ class AnimalController {
         }
     }
 
-
     @DeleteMapping("/{id}")
     fun eliminarAnimal(
         @RequestHeader("Authorization", required = false) authHeader: String?,
@@ -77,18 +75,17 @@ class AnimalController {
         val usuario = validarToken(authHeader)
             ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-        if (usuario.rol != "ADMIN") {
-            return ResponseEntity.status(403).body(mapOf("error" to "No tienes permisos para eliminar mascotas"))
-        }
-
-        val eliminado = animalService.eliminarAnimal(id)
-        return if (eliminado) {
-            ResponseEntity.ok(mapOf("mensaje" to "Mascota eliminada correctamente"))
-        } else {
-            ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+        return try {
+            val eliminado = animalService.eliminarAnimal(id, usuario.id!!)
+            if (eliminado) {
+                ResponseEntity.ok(mapOf("mensaje" to "Mascota eliminada correctamente"))
+            } else {
+                ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+            }
+        } catch (e: SecurityException) {
+            ResponseEntity.status(403).body(mapOf("error" to e.message))
         }
     }
-
 
     @PutMapping("/{id}/adoptar")
     fun marcarComoAdoptado(
@@ -98,15 +95,15 @@ class AnimalController {
         val usuario = validarToken(authHeader)
             ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-        if (usuario.rol != "ADMIN") {
-            return ResponseEntity.status(403).body(mapOf("error" to "No tienes permisos para marcar adopciones"))
-        }
-
-        val animal = animalService.marcarComoAdoptado(id)
-        return if (animal != null) {
-            ResponseEntity.ok(animal.toAnimalResponseDTO())
-        } else {
-            ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+        return try {
+            val animal = animalService.marcarComoAdoptado(id, usuario.id!!)
+            if (animal != null) {
+                ResponseEntity.ok(animal.toAnimalResponseDTO())
+            } else {
+                ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
+            }
+        } catch (e: SecurityException) {
+            ResponseEntity.status(403).body(mapOf("error" to e.message))
         }
     }
 
@@ -126,32 +123,25 @@ class AnimalController {
 
         var rutaFotoLocal = ""
 
-        //Lógica para guardar el archivo en la PC/Servidor
         if (archivoImagen != null && !archivoImagen.isEmpty) {
             try {
-                // Creamos una carpeta llamada 'uploads/mascotas' en la raíz de tu proyecto
                 val directorio = File("uploads/mascotas/")
                 if (!directorio.exists()) {
                     directorio.mkdirs()
                 }
 
-                // Generamos un nombre único (UUID) para evitar que dos fotos con el mismo nombre se sobreescriban
                 val nombreUnico = UUID.randomUUID().toString() + "_" + archivoImagen.originalFilename
                 val rutaDestino = Paths.get(directorio.absolutePath, nombreUnico)
 
-                // Guardamos el archivo físicamente
                 Files.write(rutaDestino, archivoImagen.bytes)
-
-                // Guardamos el nombre/ruta que se irá a la Base de Datos
                 rutaFotoLocal = "/imagenes/$nombreUnico"
 
             } catch (e: Exception) {
-                logger.error("Error al guardar la imagen: \${e.message}")
+                logger.error("Error al guardar la imagen: ${e.message}")
                 return ResponseEntity.status(500).body(mapOf("error" to "No se pudo guardar la imagen de la mascota"))
             }
         }
 
-        // Construimos el objeto Animal manualmente con los datos recibidos
         val animal = Animal(
             nombre = nombre,
             especie = especie,
@@ -165,7 +155,6 @@ class AnimalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota)
     }
 
-
     @PutMapping("/{id}/editar")
     fun editarAnimal(
         @PathVariable id: Int,
@@ -177,18 +166,15 @@ class AnimalController {
         @RequestParam(value = "codigoPostal", required = false) codigoPostal: String?,
         @RequestParam(value = "archivoImagen", required = false) archivoImagen: MultipartFile?
     ): ResponseEntity<Any> {
-        // Envolvemos TODO en un try-catch global para evitar que React se quede colgado
         try {
             val usuario = validarToken(authHeader)
                 ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
 
-            // 1. Buscamos la mascota actual
             val animalExistente = animalService.buscarPorId(id)
                 ?: return ResponseEntity.status(404).body(mapOf("error" to "Mascota con id $id no encontrada"))
 
             var rutaFotoFinal = animalExistente.fotoUrl
 
-            // 2. Si viene una nueva imagen, la procesamos
             if (archivoImagen != null && !archivoImagen.isEmpty) {
                 val directorio = File("uploads/mascotas/")
                 if (!directorio.exists()) {
@@ -202,7 +188,6 @@ class AnimalController {
                 rutaFotoFinal = "/imagenes/$nombreUnico"
             }
 
-            // 3. Armamos el Request
             val request = UpdateAnimalRequest(
                 nombre = nombre,
                 especie = especie,
@@ -212,7 +197,8 @@ class AnimalController {
                 fotoUrl = rutaFotoFinal
             )
 
-            val actualizado = animalService.editarAnimal(id, request, usuario.id!!, usuario.rol)
+            // Ya NO enviamos el rol
+            val actualizado = animalService.editarAnimal(id, request, usuario.id!!)
             return if (actualizado != null) {
                 ResponseEntity.ok(actualizado.toAnimalResponseDTO())
             } else {
@@ -222,12 +208,10 @@ class AnimalController {
         } catch (e: SecurityException) {
             return ResponseEntity.status(403).body(mapOf("error" to e.message))
         } catch (e: Exception) {
-            // ¡ESTO ES CLAVE! Si algo falla, registramos el error y le avisamos a React para que no se quede colgado
             logger.error("Error crítico en editarAnimal: ${e.message}", e)
             return ResponseEntity.status(500).body(mapOf("error" to "Error interno en el servidor: ${e.message}"))
         }
     }
-
 
     @GetMapping("/{id}/contacto")
     fun getContacto(
@@ -244,9 +228,17 @@ class AnimalController {
         return ResponseEntity.ok(contacto)
     }
 
-    // Función de ayuda para validar el token y obtener el usuario
     private fun validarToken(authHeader: String?) = run {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) null
         else usuarioService.obtenerUsuarioPorToken(authHeader.substring(7))
+    }
+
+    @GetMapping("/mis-publicaciones")
+    fun misPublicaciones(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Any> {
+        val usuario = validarToken(authHeader)
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Token inválido o sesión expirada"))
+
+        val misAnimales = animalService.obtenerMisAnimales(usuario.id!!)
+        return ResponseEntity.ok(misAnimales.map { it.toAnimalResponseDTO() })
     }
 }

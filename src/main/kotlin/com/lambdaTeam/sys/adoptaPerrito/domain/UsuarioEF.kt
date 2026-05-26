@@ -30,6 +30,6 @@ fun CreateUsuarioRequest.toUsuario(): Usuario {
 }
 
 fun UsuarioEntity.toUsuario(): Usuario {
-    return Usuario(id = this.id_usuario, nombre = this.nombre, email = this.correo, codigoPostal = this.codigo_postal, password = this.contrasena, token = this.token, rol = this.rol)
+    return Usuario(id = this.id_usuario, nombre = this.nombre, email = this.correo, codigoPostal = this.codigo_postal, password = this.contrasena, token = this.token)
 }
 

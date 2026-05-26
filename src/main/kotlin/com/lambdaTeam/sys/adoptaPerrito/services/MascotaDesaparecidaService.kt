@@ -92,16 +92,9 @@ class MascotaDesaparecidaService(
     }
 
     fun marcarComoEncontrada(id: Long) {
+        val mascota = repository.findById(id).orElseThrow { RuntimeException("Mascota no encontrada") }
 
-        val mascota = repository
-            .findById(id)
-            .orElseThrow {
-                RuntimeException(
-                    "Mascota no encontrada"
-                )
-            }
-
-        mascota.encontrada = true
+        mascota.encontrada = !mascota.encontrada
 
         repository.save(mascota)
     }
@@ -150,5 +143,9 @@ class MascotaDesaparecidaService(
             encontrada =
                 mascota.encontrada
         )
+    }
+
+    fun obtenerMisMascotasPerdidas(idUsuario: Int): List<MascotaDesaparecidaResponseDTO> {
+        return repository.findByUsuarioId(idUsuario).map { convertirDTO(it) }
     }
 }
