@@ -7,6 +7,10 @@ import com.lambdaTeam.sys.adoptaPerrito.entities.MascotaDesaparecida
 
 import com.lambdaTeam.sys.adoptaPerrito.repositories.MascotaDesaparecidaRepository
 import com.lambdaTeam.sys.adoptaPerrito.repositories.UsuarioRepository
+import org.springframework.web.multipart.MultipartFile
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.UUID
 
 import org.springframework.stereotype.Service
 
@@ -23,6 +27,7 @@ class MascotaDesaparecidaService(
 
     fun crear(
         dto: CrearMascotaDesaparecidaRequest,
+        foto: MultipartFile?,
         usuarioId: Long
     ): MascotaDesaparecidaResponseDTO {
 
@@ -33,6 +38,19 @@ class MascotaDesaparecidaService(
                     "Usuario no encontrado"
                 )
             }
+
+        var rutaImagen: String? = null
+
+        if (foto != null && !foto.isEmpty) {
+            //nombre único para que no se dupliquen archivos con el mismo nombre
+            val nombreUnico = UUID.randomUUID().toString() + "_" + foto.originalFilename
+            val rutaCompleta = Paths.get("uploads/mascotas").resolve(nombreUnico).toAbsolutePath()
+
+            // se guarda en uploads
+            Files.copy(foto.inputStream, rutaCompleta)
+            rutaImagen = "/imagenes/$nombreUnico"
+        }
+
 
         val mascota = MascotaDesaparecida(
 
@@ -57,7 +75,7 @@ class MascotaDesaparecidaService(
             telefonoContacto =
                 dto.telefonoContacto,
 
-            imagenUrl = dto.imagenUrl,
+            imagenUrl = rutaImagen,
 
             usuario = usuario
         )
@@ -104,6 +122,12 @@ class MascotaDesaparecidaService(
         mascota.encontrada = true
 
         repository.save(mascota)
+    }
+
+    fun listarPorUsuario(usuarioId: Long): List<MascotaDesaparecidaResponseDTO> {
+        return repository
+            .findByUsuarioId(usuarioId.toInt())
+            .map { convertirDTO(it) }
     }
 
     fun buscarPorZona(
