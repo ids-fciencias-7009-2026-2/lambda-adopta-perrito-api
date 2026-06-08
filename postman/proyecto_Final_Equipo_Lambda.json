@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Proyecto_Final_Equipo_Lambda",
+    "description": "### Nota: \nSe ha configurado la palabra 'TOKEN' como marcador de posición para la autenticación. En todos los endpoints protegidos, debes reemplazar el texto 'TOKEN' en la pestaña de Headers (Authorization) por el Bearer token real que te devuelva el endpoint de Login.\n\n---\nColección oficial de endpoints para el Proyecto Final de la API Adopta un Perrito (Equipo Lambda).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "1. Registrar Usuario",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana García\",\n  \"email\": \"ana@email.com\",\n  \"codigoPostal\": \"06600\",\n  \"password\": \"MiPassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "http://localhost:8080/usuarios/register", "host": ["localhost"], "port": "8080", "path": ["usuarios", "register"] }
+          }
+        },
+        {
+          "name": "2. Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana@email.com\",\n  \"password\": \"MiPassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "http://localhost:8080/usuarios/login", "host": ["localhost"], "port": "8080", "path": ["usuarios", "login"] }
+          }
+        },
+        {
+          "name": "3. Obtener Mi Perfil (Me)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/usuarios/me", "host": ["localhost"], "port": "8080", "path": ["usuarios", "me"] }
+          }
+        },
+        {
+          "name": "4. Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer TOKEN" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana García Actualizada\",\n  \"codigoPostal\": \"11000\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "http://localhost:8080/usuarios", "host": ["localhost"], "port": "8080", "path": ["usuarios"] }
+          }
+        },
+        {
+          "name": "5. Obtener Todos los Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/usuarios/all", "host": ["localhost"], "port": "8080", "path": ["usuarios", "all"] }
+          }
+        },
+        {
+          "name": "6. Buscar Usuarios (Filtros)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/usuarios/buscar?email=ana@email.com&cp=06600&nombre=Ana García",
+              "host": ["localhost"], "port": "8080", "path": ["usuarios", "buscar"],
+              "query": [
+                { "key": "email", "value": "ana@email.com" },
+                { "key": "cp", "value": "06600" },
+                { "key": "nombre", "value": "Ana García" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7. Logout",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/usuarios/logout", "host": ["localhost"], "port": "8080", "path": ["usuarios", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Animales",
+      "item": [
+        {
+          "name": "1. Agregar Animal",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "nombre", "value": "Firulais", "type": "text" },
+                { "key": "especie", "value": "Perro", "type": "text" },
+                { "key": "raza", "value": "Mestizo", "type": "text" },
+                { "key": "descripcion", "value": "Muy juguetón y amigable", "type": "text" },
+                { "key": "codigoPostal", "value": "06600", "type": "text" },
+                { "key": "archivoImagen", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "http://localhost:8080/animales/agregar", "host": ["localhost"], "port": "8080", "path": ["animales", "agregar"] }
+          }
+        },
+        {
+          "name": "2. Buscar Animales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/animales/buscar?especie=Perro&raza=Mestizo",
+              "host": ["localhost"], "port": "8080", "path": ["animales", "buscar"],
+              "query": [
+                { "key": "especie", "value": "Perro" },
+                { "key": "raza", "value": "Mestizo" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Obtener Mis Animales",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/animales/mis-animales", "host": ["localhost"], "port": "8080", "path": ["animales", "mis-animales"] }
+          }
+        },
+        {
+          "name": "4. Editar Animal",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "nombre", "value": "Firulais Editado", "type": "text" }
+              ]
+            },
+            "url": { "raw": "http://localhost:8080/animales/1/editar", "host": ["localhost"], "port": "8080", "path": ["animales", "1", "editar"] }
+          }
+        },
+        {
+          "name": "5. Enviar Interés (Notificar Dueño)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/animales/1/enviar-interes", "host": ["localhost"], "port": "8080", "path": ["animales", "1", "enviar-interes"] }
+          }
+        },
+        {
+          "name": "6. Marcar como Adoptado (Solo ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/animales/1/adoptar", "host": ["localhost"], "port": "8080", "path": ["animales", "1", "adoptar"] }
+          }
+        },
+        {
+          "name": "7. Eliminar Animal (Solo ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/animales/1", "host": ["localhost"], "port": "8080", "path": ["animales", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mascotas Desaparecidas",
+      "item": [
+        {
+          "name": "1. Reportar Mascota Desaparecida",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "nombre", "value": "Rocky", "type": "text" },
+                { "key": "especie", "value": "Perro", "type": "text" },
+                { "key": "zonaDesaparicion", "value": "Parque Central", "type": "text" },
+                { "key": "fechaDesaparicion", "value": "2023-10-25", "type": "text" },
+                { "key": "telefonoContacto", "value": "5551234567", "type": "text" },
+                { "key": "foto", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "http://localhost:8080/mascotas-desaparecidas", "host": ["localhost"], "port": "8080", "path": ["mascotas-desaparecidas"] }
+          }
+        },
+        {
+          "name": "2. Listar Todas Activas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/mascotas-desaparecidas", "host": ["localhost"], "port": "8080", "path": ["mascotas-desaparecidas"] }
+          }
+        },
+        {
+          "name": "3. Listar Mis Mascotas Desaparecidas",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer TOKEN" } ],
+            "url": { "raw": "http://localhost:8080/mascotas-desaparecidas/mis-mascotas", "host": ["localhost"], "port": "8080", "path": ["mascotas-desaparecidas", "mis-mascotas"] }
+          }
+        },
+        {
+          "name": "4. Buscar por Zona",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/mascotas-desaparecidas/buscar?zona=Parque",
+              "host": ["localhost"], "port": "8080", "path": ["mascotas-desaparecidas", "buscar"],
+              "query": [
+                { "key": "zona", "value": "Parque" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Marcar como Encontrada",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/mascotas-desaparecidas/1/encontrada", "host": ["localhost"], "port": "8080", "path": ["mascotas-desaparecidas", "1", "encontrada"] }
+          }
+        }
+      ]
+    }
+  ]
+}
